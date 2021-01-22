@@ -135,8 +135,8 @@ for i in xrange(1, 6572, 6):
     prev = im
 
 
-print "AVG:", total * 1. / count
-print "EST:", count * ( 1 + 24 / 8) + total
+print "//AVG:", total * 1. / count
+print "//EST:", count * ( 1 + 24 / 8) + total
 
 '''
 prev = get_frame(4822)
