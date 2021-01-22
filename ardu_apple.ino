@@ -20,8 +20,8 @@ uint8_t PREV [W * H / 8];
 
 int drawFrame(uint8_t *frame) {
     uint8_t color = pgm_read_byte(frame + 3) >> 7 & 1;
-    int8_t skip = (pgm_read_byte(frame + 3) & 0x7f);
-    uint8_t len = pgm_read_byte(frame + 4);
+    int8_t skip = 0;
+    uint8_t len = pgm_read_byte(frame + 3) & 0x7F;
     uint8_t ptr = 0;
 
     for( int y = 0; y < H; y ++) {
@@ -44,7 +44,7 @@ int drawFrame(uint8_t *frame) {
                         skip = 255;
                         break;
                     }
-                    skip = 0xf & pgm_read_byte(frame + 5 + ptr / 2) >> (4 * (ptr %2));
+                    skip = 0xf & pgm_read_byte(frame + 4 + ptr / 2) >> (4 * (ptr %2));
                     ptr ++;
                 }
                 if(!color) {
@@ -62,7 +62,7 @@ int drawFrame(uint8_t *frame) {
         }
     }
     if (len%2) len++;
-    return len/2 + 5;
+    return len/2 + 4;
 }
 
 
@@ -85,7 +85,7 @@ void loop() {
         ptr += ret;
     }
 
-    if (ptr > 22139) {
+    if (ptr > 21779) {
         ptr = 0;
         for(int i = 0; i < W * H / 8; i++)
             PREV[i] = 0;

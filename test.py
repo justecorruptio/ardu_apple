@@ -62,17 +62,19 @@ def tween(prev, im):
 
 def encode(blocks, data):
     if data and data[0] == 0:
-        tl = 1
+        tl = 0
         data = data[1:]
     else:
-        tl = 0
+        tl = 1
     #print "  TL:", tl
+    '''
     if data:
         skip = data[0]
         data = data[1:]
     else:
         skip = 0
-    #print "SKIP:", skip
+    print "SKIP:", skip
+    '''
     nibs = []
     for d in data:
         while d > 15:
@@ -90,8 +92,9 @@ def encode(blocks, data):
         for j in xrange(8):
             v |= blocks[i * 8 + j] << j
         byts.append(v)
-    byts.append( (tl << 7) | skip )
-    byts.append( len_nibs )
+
+    #byts.append( (tl << 7) | skip )
+    byts.append( (tl << 7) | len_nibs )
 
     if len_nibs % 2 == 1:
         nibs.append(0)
