@@ -2,9 +2,9 @@ from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 16
 THRESH = 200
+JUMP = 6
 
 def get_frame(n):
-    #im = Image.open('data/frames/out000327.png')
     im = Image.open('data/frames/out%06d.png' % (n,))
     W, H = im.size
 
@@ -18,65 +18,7 @@ def get_frame(n):
     W, H = im.size
 
     #im = im.convert('1')
-    #print list(im.getdata()), len(list(im.getdata()))
     return im
-
-def compress1(im):
-    W, H = im.size
-    data = map(lambda x: int(x > 0), list(im.getdata()))
-    #print data
-    cur_col = 0
-    rl = 0
-    ret = []
-    for v in data:
-        if v == cur_col:
-            rl += 1
-        else:
-            ret.append(rl)
-            rl = 1
-            cur_col = 1 - cur_col
-    if rl:
-        ret.append(rl)
-    return ret
-
-def compress2(im):
-    BS = 4
-    W, H = im.size
-    data = map(lambda x: int(x > 0), list(im.getdata()))
-    blocks = []
-    for y in xrange(0, H, BS):
-        for x in xrange(0, W, BS):
-            col = data[x + y * W]
-            all_same = True
-            for dy in xrange(y, y+BS):
-                if dy >= H:
-                    break
-                for dx in xrange(x, x+BS):
-                    if dx >= W:
-                        break
-                    if data[dx + dy * W] != col:
-                        all_same = False
-            blocks.append(int(all_same) * 2 + int(col))
-
-    BW = W / BS if W % BS ==0 else W / BS + 1
-
-    cur_col = 0
-    rl = 0
-    ret = []
-    for i, v in enumerate(data):
-        x, y = i % W, i / W
-        if blocks[x / BS + (y / BS) * BW] > 1:
-            continue
-        if v == cur_col:
-            rl += 1
-        else:
-            ret.append(rl)
-            rl = 1
-            cur_col = 1 - cur_col
-    if rl:
-        ret.append(rl)
-    ret = ret[:-1]
-    return blocks, ret
 
 def tween(prev, im):
     BS = 4
@@ -118,33 +60,74 @@ def tween(prev, im):
     ret = ret[:-1]
     return blocks, ret
 
+def encode(blocks, data):
+    if data and data[0] == 0:
+        tl = 1
+        data = data[1:]
+    else:
+        tl = 0
+    #print "  TL:", tl
+    if data:
+        skip = data[0]
+        data = data[1:]
+    else:
+        skip = 0
+    #print "SKIP:", skip
+    nibs = []
+    for d in data:
+        while d > 15:
+            nibs.extend([15, 0])
+            d -= 15
+        nibs.append(d)
+    print "NIBS:", nibs
+    len_nibs = len(nibs)
+    #print " LEN:", len_nibs
+    #print "BLCK:", blocks
 
-total = 0
-count = 0
-for i in xrange(1, 6572, 6):
-    im = get_frame(i)
+    byts = []
+    for i in xrange(3):
+        v = 0
+        for j in xrange(8):
+            v |= blocks[i * 8 + j] << j
+        byts.append(v)
+    byts.append( (tl << 7) | skip )
+    byts.append( len_nibs )
 
-    #b, c = compress2(im)
-    #print "K", i, c, len(c)
-    if i > 1:
+    if len_nibs % 2 == 1:
+        nibs.append(0)
+    for i in xrange(0, len(nibs), 2):
+        v = nibs[i] | nibs[i + 1] << 4
+        byts.append( v )
+
+    print "ENCD:", ', '.join(map(hex, byts))
+    return byts
+
+
+
+def process(start, frames):
+    total = 0
+    count = 0
+    rows = []
+    prev = get_frame(start)
+    for i in xrange(start + JUMP, frames, JUMP):
+        im = get_frame(i)
         b, c = tween(prev, im)
-        print "T", i, c, len(c)
+        print i, c, len(c)
+
+        d = encode(b, c)
 
         count += 1
-        total += (len(c) - 1.5) / 2
-    prev = im
+        total += len(d)
+        prev = im
 
+    print "//TOT:", total
 
-print "//AVG:", total * 1. / count
-print "//EST:", count * ( 1 + 24 / 8) + total
+#process(1, 6572)
+#process(475, 482)
 
-'''
-prev = get_frame(4822)
-im = get_frame(4828)
-b, c = compress2(im)
-print "K", c, len(c)
+prev = get_frame(1)
+im = get_frame(1182)
+#im.show()
 b, c = tween(prev, im)
-print "T", c, len(c)
-
-im.show()
-'''
+print b, c
+d = encode(b, c)
