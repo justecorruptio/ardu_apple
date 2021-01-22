@@ -79,7 +79,7 @@ def encode(blocks, data):
             nibs.extend([15, 0])
             d -= 15
         nibs.append(d)
-    print "NIBS:", nibs
+    #print "NIBS:", nibs
     len_nibs = len(nibs)
     #print " LEN:", len_nibs
     #print "BLCK:", blocks
@@ -99,7 +99,7 @@ def encode(blocks, data):
         v = nibs[i] | nibs[i + 1] << 4
         byts.append( v )
 
-    print "ENCD:", ', '.join(map(hex, byts))
+    print ', '.join(map(hex, byts)) + ','
     return byts
 
 
@@ -112,7 +112,7 @@ def process(start, frames):
     for i in xrange(start + JUMP, frames, JUMP):
         im = get_frame(i)
         b, c = tween(prev, im)
-        print i, c, len(c)
+        #print i, c, len(c)
 
         d = encode(b, c)
 
@@ -122,12 +122,14 @@ def process(start, frames):
 
     print "//TOT:", total
 
-#process(1, 6572)
+process(1, 6572)
 #process(475, 482)
 
+'''
 prev = get_frame(1)
 im = get_frame(1182)
 #im.show()
 b, c = tween(prev, im)
-print b, c
+#print b, c
 d = encode(b, c)
+'''
