@@ -85,7 +85,7 @@ void loop() {
         ptr += ret;
     }
 
-    if (ptr > 21779) {
+    if (ptr > FRAMES_BYTES) {
         ptr = 0;
         for(int i = 0; i < W * H / 8; i++)
             PREV[i] = 0;

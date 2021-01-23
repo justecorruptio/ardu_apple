@@ -1,8 +1,12 @@
 from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 16
+WANT_WIDTH = 21
 THRESH = 200
 JUMP = 6
+BS = 4
+BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
+
 
 def get_frame(n):
     im = Image.open('data/frames/out%06d.png' % (n,))
@@ -14,6 +18,11 @@ def get_frame(n):
     #im = im.filter(ImageFilter.GaussianBlur(3))
     im = im.filter(ImageFilter.MaxFilter(5))
 
+    margin = (W - H * WANT_WIDTH / WANT_HEIGHT) / 2 - 1
+
+    im = im.crop((margin, 0, W - margin , H))
+    W, H = im.size
+
     im = im.resize((WANT_HEIGHT * W / H, WANT_HEIGHT))
     W, H = im.size
 
@@ -21,7 +30,7 @@ def get_frame(n):
     return im
 
 def tween(prev, im):
-    BS = 4
+
     W, H = im.size
     data = map(lambda x: int(x > 0), list(im.getdata()))
     prev_data = map(lambda x: int(x > 0), list(prev.getdata()))
@@ -40,7 +49,7 @@ def tween(prev, im):
                         all_same = False
             blocks.append(int(all_same))
 
-    BW = W / BS if W % BS ==0 else W / BS + 1
+    #BW = W / BS if W % BS ==0 else W / BS + 1
 
     cur_col = 0
     rl = 0
@@ -87,10 +96,24 @@ def encode(blocks, data):
     #print "BLCK:", blocks
 
     byts = []
+    '''
     for i in xrange(3):
         v = 0
         for j in xrange(8):
             v |= blocks[i * 8 + j] << j
+        byts.append(v)
+    '''
+
+    v = 0
+    flushed = False
+    for i, b in enumerate(blocks):
+        v |= b << (i % 8)
+        flushed = False
+        if i % 8 ==  7:
+            flushed = True
+            byts.append(v)
+            v = 0
+    if not flushed:
         byts.append(v)
 
     #byts.append( (tl << 7) | skip )
@@ -108,6 +131,12 @@ def encode(blocks, data):
 
 
 def process(start, frames):
+    print  """
+#ifndef FRAMES_H
+#define FRAMES_H
+PROGMEM const uint8_t FRAMES [] = {
+"""
+
     total = 0
     count = 0
     rows = []
@@ -122,10 +151,14 @@ def process(start, frames):
         count += 1
         total += len(d)
         prev = im
-
-    print "//TOT:", total
+    print """
+};
+#endif
+"""
+    print "#define FRAMES_BYTES", total
 
 process(1, 6572)
+#process(1, 1000)
 #process(475, 482)
 
 '''
