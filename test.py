@@ -1,7 +1,7 @@
 from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 16
-WANT_WIDTH = 21
+WANT_WIDTH =20
 THRESH = 200
 JUMP = 6
 BS = 4
@@ -18,12 +18,12 @@ def get_frame(n):
     #im = im.filter(ImageFilter.GaussianBlur(3))
     im = im.filter(ImageFilter.MaxFilter(5))
 
-    margin = (W - H * WANT_WIDTH / WANT_HEIGHT) / 2 - 1
+    margin = (W - H * WANT_WIDTH / WANT_HEIGHT) / 2
 
     im = im.crop((margin, 0, W - margin , H))
     W, H = im.size
 
-    im = im.resize((WANT_HEIGHT * W / H, WANT_HEIGHT))
+    im = im.resize((WANT_WIDTH, WANT_HEIGHT))
     W, H = im.size
 
     #im = im.convert('1')
@@ -125,39 +125,45 @@ def encode(blocks, data):
         v = nibs[i] | nibs[i + 1] << 4
         byts.append( v )
 
-    print ', '.join(map(hex, byts)) + ','
     return byts
 
 
 
 def process(start, frames):
-    print  """
-#ifndef FRAMES_H
-#define FRAMES_H
-PROGMEM const uint8_t FRAMES [] = {
-"""
+    print "#ifndef FRAMES_H"
+    print "#define FRAMES_H"
+    print "PROGMEM const uint8_t FRAMES [] = {"
 
     total = 0
     count = 0
     rows = []
     prev = get_frame(start)
     for i in xrange(start + JUMP, frames, JUMP):
-        im = get_frame(i)
-        b, c = tween(prev, im)
-        #print i, c, len(c)
 
-        d = encode(b, c)
+        options = []
+        for o in xrange(-1, 3, 1):
+            im = get_frame(i + o)
+            b, c = tween(prev, im)
+            d = encode(b, c)
+            options.append((d, im))
+        options.sort(key=lambda x: len(x[0]))
+        d, im = options[0]
+
+        print ', '.join(map(hex, d)) + ','
 
         count += 1
         total += len(d)
         prev = im
-    print """
-};
-#endif
-"""
-    print "#define FRAMES_BYTES", total
 
-process(1, 6572)
+    print """ };"""
+    print "#define FRAMES_BYTES", total
+    print "#define FRAMES_W", WANT_WIDTH
+    print "#define FRAMES_H", WANT_HEIGHT
+    print "#define FRAMES_BS", BS
+    print "#define FRAMES_BW", BW
+    print "#endif"
+
+process(1, 6565)
 #process(1, 1000)
 #process(475, 482)
 

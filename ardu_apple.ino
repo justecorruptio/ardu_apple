@@ -10,11 +10,11 @@ void setup() {
     jay.clear();
 }
 
-#define W 21
-#define H 16
+#define W FRAMES_W
+#define H FRAMES_H
 
-#define BS 4
-#define BW 6
+#define BS FRAMES_BS
+#define BW FRAMES_BW
 
 uint8_t PREV [W * H / 8];
 
@@ -81,7 +81,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % 6 == 0) {
+    if (counter % 8 == 0) {
         ptr += ret;
     }
 
