@@ -6,8 +6,6 @@ Jaylib jay;
 
 void setup() {
     jay.boot();
-    jay.invert(0);
-    jay.clear();
 }
 
 #define W FRAMES_W
@@ -34,14 +32,8 @@ int drawFrame(uint8_t *frame) {
             int pix_id = y * W + x;
             int block_id = y / BS * BW + x / BS;
             if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
-                //jay.drawPixel(x, y);
                 if ((PREV[pix_id / 8] & (1 << (pix_id % 8)))) {
-                    //jay.drawPixel(x, y);
-                    //jay.drawFastVLine(x * FACTOR + 0 + OFFX, y * FACTOR + OFFY, FACTOR);
-                    //jay.drawFastVLine(x * FACTOR + 1 + OFFX, y * FACTOR + OFFY, FACTOR);
-                    //jay.drawFastVLine(x * FACTOR + 2 + OFFX, y * FACTOR + OFFY, FACTOR);
-                    jay.fillRect(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR, FACTOR, 1);
-                    //jay.drawFastVLine(x * FACTOR + 3 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
                 }
             } else {
                 while (!skip) {
@@ -54,12 +46,7 @@ int drawFrame(uint8_t *frame) {
                     ptr ++;
                 }
                 if(!color) {
-                    //jay.drawPixel(x, y);
-                    //jay.drawFastVLine(x * FACTOR + 0 + OFFX, y * FACTOR + OFFY, FACTOR);
-                    //jay.drawFastVLine(x * FACTOR + 1 + OFFX, y * FACTOR + OFFY, FACTOR);
-                    //jay.drawFastVLine(x * FACTOR + 2 + OFFX, y * FACTOR + OFFY, FACTOR);
-                    jay.fillRect(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR, FACTOR, 1);
-                    //jay.drawFastVLine(x * FACTOR + 3 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
                     PREV[pix_id / 8] |= (1 << (pix_id % 8));
                 } else {
                     PREV[pix_id / 8] &= ~(1 << (pix_id % 8));
@@ -68,7 +55,7 @@ int drawFrame(uint8_t *frame) {
             }
         }
     }
-    if (len%2) len++;
+    len += len%2;
     return len/2 + BL + 1;
 }
 
@@ -79,7 +66,7 @@ void loop() {
 
     if(!jay.nextFrame()) return;
 
-    jay.pollButtons();
+    //jay.pollButtons();
     jay.clear();
 
     //jay.smallPrint(0, 0, "HELLO WORLD");

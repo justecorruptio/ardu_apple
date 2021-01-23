@@ -143,7 +143,7 @@ def process(start, frames):
     total = 0
     count = 0
     rows = []
-    prev = get_frame(start)
+    prev = get_frame(1)
     for i in xrange(start + JUMP, frames, JUMP):
 
         options = []
@@ -173,8 +173,8 @@ def process(start, frames):
     print "#define FRAMES_BL", BL
     print "#endif"
 
-#process(1, 6565)
-process(1, 1000)
+#process(30, 6565)
+process(30, 1500)
 #process(475, 482)
 
 '''

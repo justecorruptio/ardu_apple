@@ -42,3 +42,10 @@ void Jaylib::drawFastHLine(uint8_t x, uint8_t y, uint8_t w) {
     for(i = w; i --;)
         drawPixel(x + i, y);
 }
+
+void Jaylib::drawSquare(uint8_t x, uint8_t y, uint8_t w) {
+    uint8_t i, j;
+    for(i = w; i --;)
+        for(j = w; j --;)
+            drawPixel(x + i, y + j);
+}
