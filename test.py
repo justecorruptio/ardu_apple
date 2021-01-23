@@ -69,14 +69,32 @@ def tween(prev, im):
     ret = ret[:-1]
     return blocks, ret
 
+def simplify(data):
+    if len(data) < 3:
+        return data
+
+    ret = [data[0]]
+    i = 1
+    while i < len(data) - 1:
+        if data[i] == 1 and data[i + 1] != 1 and data[i - 1] != 1:
+            ret[-1] += data[i + 1] + 1
+            i += 1
+        else:
+            ret.append(data[i])
+        i += 1
+
+    if i < len(data):
+        ret.append(data[i])
+    return ret
+
 def encode(blocks, data):
     global BL
 
     if data and data[0] == 0:
-        tl = 0
+        tl = 1
         data = data[1:]
     else:
-        tl = 1
+        tl = 0
     #print "  TL:", tl
     nibs = []
     for d in data:
@@ -132,6 +150,9 @@ def process(start, frames):
         for o in xrange(JUMP):
             im = get_frame(i + o)
             b, c = tween(prev, im)
+
+            #c = simplify(c)
+
             d = encode(b, c)
             options.append((d, im))
         options.sort(key=lambda x: len(x[0]))
