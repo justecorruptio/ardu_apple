@@ -16,12 +16,15 @@ void setup() {
 #define BS FRAMES_BS
 #define BW FRAMES_BW
 
+#define FACTOR 64 / FRAMES_H
+#define BL 3
+
 uint8_t PREV [W * H / 8];
 
 int drawFrame(uint8_t *frame) {
-    uint8_t color = pgm_read_byte(frame + 3) >> 7 & 1;
-    int8_t skip = 0;
-    uint8_t len = pgm_read_byte(frame + 3) & 0x7F;
+    uint8_t color = pgm_read_byte(frame + BL) >> 7 & 1;
+    uint8_t len = pgm_read_byte(frame + BL) & 0x7F;
+    int16_t skip = 0;
     uint8_t ptr = 0;
 
     for( int y = 0; y < H; y ++) {
@@ -32,27 +35,27 @@ int drawFrame(uint8_t *frame) {
                 //jay.drawPixel(x, y);
                 if (!(PREV[pix_id / 8] & (1 << (pix_id % 8)))) {
                     //jay.drawPixel(x, y);
-                    jay.drawFastVLine(x * 4 + 0 + 22, y * 4, 4);
-                    jay.drawFastVLine(x * 4 + 1 + 22, y * 4, 4);
-                    jay.drawFastVLine(x * 4 + 2 + 22, y * 4, 4);
-                    jay.drawFastVLine(x * 4 + 3 + 22, y * 4, 4);
+                    jay.drawFastVLine(x * FACTOR + 0 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 1 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 2 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 3 + 22, y * FACTOR, FACTOR);
                 }
             } else {
                 while (!skip) {
                     color = 1 - color;
                     if(ptr >= len) {
-                        skip = 255;
+                        skip = 0xffff;
                         break;
                     }
-                    skip = 0xf & pgm_read_byte(frame + 4 + ptr / 2) >> (4 * (ptr %2));
+                    skip = 0xf & pgm_read_byte(frame + BL + 1 + ptr / 2) >> (4 * (ptr %2));
                     ptr ++;
                 }
                 if(!color) {
                     //jay.drawPixel(x, y);
-                    jay.drawFastVLine(x * 4 + 0 + 22, y * 4, 4);
-                    jay.drawFastVLine(x * 4 + 1 + 22, y * 4, 4);
-                    jay.drawFastVLine(x * 4 + 2 + 22, y * 4, 4);
-                    jay.drawFastVLine(x * 4 + 3 + 22, y * 4, 4);
+                    jay.drawFastVLine(x * FACTOR + 0 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 1 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 2 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 3 + 22, y * FACTOR, FACTOR);
                     PREV[pix_id / 8] &= ~(1 << (pix_id % 8));
                 } else {
                     PREV[pix_id / 8] |= (1 << (pix_id % 8));
@@ -62,7 +65,7 @@ int drawFrame(uint8_t *frame) {
         }
     }
     if (len%2) len++;
-    return len/2 + 4;
+    return len/2 + BL + 1;
 }
 
 

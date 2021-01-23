@@ -1,7 +1,7 @@
 from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 16
-WANT_WIDTH =20
+WANT_WIDTH = 20
 THRESH = 200
 JUMP = 6
 BS = 4
@@ -38,7 +38,7 @@ def tween(prev, im):
     blocks = []
     for y in xrange(0, H, BS):
         for x in xrange(0, W, BS):
-            all_same = True
+            diff = 0
             for dy in xrange(y, y+BS):
                 if dy >= H:
                     break
@@ -46,8 +46,8 @@ def tween(prev, im):
                     if dx >= W:
                         break
                     if data[dx + dy * W] != prev_data[dx + dy * W]:
-                        all_same = False
-            blocks.append(int(all_same))
+                        diff += 1
+            blocks.append(int(diff == 0))
 
     #BW = W / BS if W % BS ==0 else W / BS + 1
 
