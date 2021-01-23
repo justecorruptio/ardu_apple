@@ -18,6 +18,8 @@ void setup() {
 #define BL FRAMES_BL
 
 #define FACTOR (64 / FRAMES_H)
+#define OFFX ((128 - W * FACTOR) / 2)
+#define OFFY ((64 - H * FACTOR) / 2)
 
 uint8_t PREV [W * H / 8];
 
@@ -35,10 +37,10 @@ int drawFrame(uint8_t *frame) {
                 //jay.drawPixel(x, y);
                 if (!(PREV[pix_id / 8] & (1 << (pix_id % 8)))) {
                     //jay.drawPixel(x, y);
-                    jay.drawFastVLine(x * FACTOR + 0 + 22, y * FACTOR, FACTOR);
-                    jay.drawFastVLine(x * FACTOR + 1 + 22, y * FACTOR, FACTOR);
-                    jay.drawFastVLine(x * FACTOR + 2 + 22, y * FACTOR, FACTOR);
-                    jay.drawFastVLine(x * FACTOR + 3 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 0 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 1 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 2 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 3 + OFFX, y * FACTOR + OFFY, FACTOR);
                 }
             } else {
                 while (!skip) {
@@ -52,10 +54,10 @@ int drawFrame(uint8_t *frame) {
                 }
                 if(!color) {
                     //jay.drawPixel(x, y);
-                    jay.drawFastVLine(x * FACTOR + 0 + 22, y * FACTOR, FACTOR);
-                    jay.drawFastVLine(x * FACTOR + 1 + 22, y * FACTOR, FACTOR);
-                    jay.drawFastVLine(x * FACTOR + 2 + 22, y * FACTOR, FACTOR);
-                    jay.drawFastVLine(x * FACTOR + 3 + 22, y * FACTOR, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 0 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 1 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 2 + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawFastVLine(x * FACTOR + 3 + OFFX, y * FACTOR + OFFY, FACTOR);
                     PREV[pix_id / 8] &= ~(1 << (pix_id % 8));
                 } else {
                     PREV[pix_id / 8] |= (1 << (pix_id % 8));

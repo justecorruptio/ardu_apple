@@ -78,14 +78,6 @@ def encode(blocks, data):
     else:
         tl = 1
     #print "  TL:", tl
-    '''
-    if data:
-        skip = data[0]
-        data = data[1:]
-    else:
-        skip = 0
-    print "SKIP:", skip
-    '''
     nibs = []
     for d in data:
         while d > 15:
@@ -98,13 +90,6 @@ def encode(blocks, data):
     #print "BLCK:", blocks
 
     byts = []
-    '''
-    for i in xrange(3):
-        v = 0
-        for j in xrange(8):
-            v |= blocks[i * 8 + j] << j
-        byts.append(v)
-    '''
 
     v = 0
     flushed = False
@@ -120,7 +105,6 @@ def encode(blocks, data):
 
     BL = len(byts)
 
-    #byts.append( (tl << 7) | skip )
     byts.append( (tl << 7) | len_nibs )
 
     if len_nibs % 2 == 1:
