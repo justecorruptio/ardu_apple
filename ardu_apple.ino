@@ -15,9 +15,9 @@ void setup() {
 
 #define BS FRAMES_BS
 #define BW FRAMES_BW
+#define BL FRAMES_BL
 
-#define FACTOR 64 / FRAMES_H
-#define BL 3
+#define FACTOR (64 / FRAMES_H)
 
 uint8_t PREV [W * H / 8];
 

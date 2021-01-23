@@ -1,11 +1,12 @@
 from PIL import Image, ImageFilter, ImageOps
 
-WANT_HEIGHT = 16
-WANT_WIDTH = 20
+WANT_HEIGHT = 21
+WANT_WIDTH = 24
 THRESH = 200
 JUMP = 6
 BS = 4
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
+BL = 0
 
 
 def get_frame(n):
@@ -30,7 +31,6 @@ def get_frame(n):
     return im
 
 def tween(prev, im):
-
     W, H = im.size
     data = map(lambda x: int(x > 0), list(im.getdata()))
     prev_data = map(lambda x: int(x > 0), list(prev.getdata()))
@@ -70,6 +70,8 @@ def tween(prev, im):
     return blocks, ret
 
 def encode(blocks, data):
+    global BL
+
     if data and data[0] == 0:
         tl = 0
         data = data[1:]
@@ -116,6 +118,8 @@ def encode(blocks, data):
     if not flushed:
         byts.append(v)
 
+    BL = len(byts)
+
     #byts.append( (tl << 7) | skip )
     byts.append( (tl << 7) | len_nibs )
 
@@ -141,7 +145,7 @@ def process(start, frames):
     for i in xrange(start + JUMP, frames, JUMP):
 
         options = []
-        for o in xrange(-1, 3, 1):
+        for o in xrange(JUMP):
             im = get_frame(i + o)
             b, c = tween(prev, im)
             d = encode(b, c)
@@ -161,10 +165,11 @@ def process(start, frames):
     print "#define FRAMES_H", WANT_HEIGHT
     print "#define FRAMES_BS", BS
     print "#define FRAMES_BW", BW
+    print "#define FRAMES_BL", BL
     print "#endif"
 
-process(1, 6565)
-#process(1, 1000)
+#process(1, 6565)
+process(1, 1000)
 #process(475, 482)
 
 '''
