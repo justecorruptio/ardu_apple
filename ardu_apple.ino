@@ -24,19 +24,11 @@ void setup() {
 uint8_t PREV [W * H / 8];
 
 int drawFrame(uint8_t *frame) {
-    uint8_t color = pgm_read_byte(frame + BL) >> 7 & 1;
-    uint8_t horiz = pgm_read_byte(frame + BL) >> 6 & 1;
-    uint8_t len = pgm_read_byte(frame + BL) & 0x3F;
+    uint8_t color = pgm_read_byte(frame + BL - 1) >> 7 & 1;
+    uint8_t horiz = pgm_read_byte(frame + BL - 1) >> 6 & 1;
+    uint8_t len = pgm_read_byte(frame + BL);
     int16_t skip = 0;
     uint8_t ptr = 0;
-
-    if (horiz && (len < 16))
-        len |= 0x40;
-
-    /*
-    for( int y = 0; y < H; y ++) {
-        for( int x = 0; x < W; x ++) {
-    */
 
     int x, y;
 
@@ -92,7 +84,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % JUMP == 0) {
+    if (counter % 4 == 0) {
         ptr += ret;
     }
 

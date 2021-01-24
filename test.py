@@ -2,9 +2,11 @@ from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 20
 WANT_WIDTH = 24
-THRESH = 200
-JUMP = 3
 BS = 4
+#MAKE SURE blocks as 2 bits left over
+
+THRESH = 250
+JUMP = 6
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
 
@@ -73,8 +75,8 @@ def rle_h(data, blocks):
         ret.append(rl)
     ret = ret[:-1]
 
-    if len(ret) >= 48:
-        ret = simplify(ret)
+    #if len(ret) >= 64:
+    #    ret = simplify(ret)
 
     #if len(ret) >= 63:
     #    raise Exception("TOO LONG")
@@ -101,8 +103,8 @@ def rle_v(data, blocks):
         ret.append(rl)
     ret = ret[:-1]
 
-    if len(ret) >= 48:
-        ret = simplify(ret)
+    #if len(ret) >= 64:
+    #    ret = simplify(ret)
 
     #if len(ret) >= 63:
     #    raise Exception("TOO LONG")
@@ -166,13 +168,14 @@ def encode(blocks, rh, rv):
 
     tl, nibs, horiz = (tlh, nibsh, True) if (
         (len(nibsh) > 63 and len(nibsv) > 63 or len(nibsh) < len(nibsv) )
-        and len(nibsh) >= 16
     ) else (tlv, nibsv, False)
 
     len_nibs = len(nibs)
 
     # FORCE HORIZ FOR NIBS > 63
-    byts.append( (int(horiz) << 6) | (tl << 7) | len_nibs )
+    #byts.append( (int(horiz) << 6) | (tl << 7) | len_nibs )
+    byts[-1] |= (int(horiz) << 6) | (tl << 7)
+    byts.append( len_nibs )
 
     if len_nibs % 2 == 1:
         nibs.append(0)
@@ -224,8 +227,8 @@ def process(start, frames):
     print "#define FRAMES_JUMP", JUMP
     print "#endif"
 
-#process(30, 6565)
-process(40, 1000)
+process(40, 6565)
+#process(40, 1000)
 #process(475, 482)
 
 '''
