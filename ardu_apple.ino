@@ -1,11 +1,15 @@
 #include "jaylib.h"
 #include "utils.h"
 #include "frames.h"
+#include "music.h"
 
 Jaylib jay;
 
 void setup() {
     jay.boot();
+    jay.tones.on();
+    jay.tones.init();
+    jay.tones.playSong(0, bad_apple);
 }
 
 #define W FRAMES_W
@@ -84,7 +88,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % 4 == 0) {
+    if (counter % 6 == 0) {
         ptr += ret;
     }
 
