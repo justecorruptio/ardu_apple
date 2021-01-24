@@ -15,6 +15,8 @@ void setup() {
 #define BW FRAMES_BW
 #define BL FRAMES_BL
 
+#define JUMP (FRAMES_JUMP * 2)
+
 #define FACTOR (64 / FRAMES_H)
 #define OFFX ((128 - W * FACTOR) / 2)
 #define OFFY ((64 - H * FACTOR) / 2)
@@ -23,12 +25,27 @@ uint8_t PREV [W * H / 8];
 
 int drawFrame(uint8_t *frame) {
     uint8_t color = pgm_read_byte(frame + BL) >> 7 & 1;
-    uint8_t len = pgm_read_byte(frame + BL) & 0x7F;
+    uint8_t horiz = pgm_read_byte(frame + BL) >> 6 & 1;
+    uint8_t len = pgm_read_byte(frame + BL) & 0x3F;
     int16_t skip = 0;
     uint8_t ptr = 0;
 
+    if (horiz && (len < 16))
+        len |= 0x40;
+
+    /*
     for( int y = 0; y < H; y ++) {
         for( int x = 0; x < W; x ++) {
+    */
+
+    int x, y;
+
+    for (int i = 0; i < W*H; i++) {
+        if (horiz) {
+            x = i % W; y = i / W;
+        } else {
+            x = i / H; y = i % H;
+        }
             int pix_id = y * W + x;
             int block_id = y / BS * BW + x / BS;
             if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
@@ -54,7 +71,7 @@ int drawFrame(uint8_t *frame) {
                 skip --;
             }
         }
-    }
+
     len += len%2;
     return len/2 + BL + 1;
 }
@@ -75,7 +92,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % 6 == 0) {
+    if (counter % JUMP == 0) {
         ptr += ret;
     }
 

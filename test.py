@@ -8,6 +8,9 @@ BS = 4
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
 
+W = WANT_WIDTH
+H = WANT_HEIGHT
+
 
 def get_frame(n):
     im = Image.open('data/frames/out%06d.png' % (n,))
@@ -28,13 +31,12 @@ def get_frame(n):
     W, H = im.size
 
     #im = im.convert('1')
-    return im
+    return im, to_data(im)
 
-def tween(prev, im):
-    W, H = im.size
-    data = map(lambda x: int(x > 0), list(im.getdata()))
-    prev_data = map(lambda x: int(x > 0), list(prev.getdata()))
+def to_data(im):
+    return map(lambda x: int(x > 0), list(im.getdata()))
 
+def tween(prev_data, data):
     blocks = []
     for y in xrange(0, H, BS):
         for x in xrange(0, W, BS):
@@ -50,7 +52,9 @@ def tween(prev, im):
 
             blocks.append(int(diff == 0))
 
-    #BW = W / BS if W % BS ==0 else W / BS + 1
+    return blocks
+
+def rle_h(data, blocks):
 
     cur_col = 0
     rl = 0
@@ -68,7 +72,42 @@ def tween(prev, im):
     if rl:
         ret.append(rl)
     ret = ret[:-1]
-    return blocks, ret
+
+    if len(ret) >= 48:
+        ret = simplify(ret)
+
+    #if len(ret) >= 63:
+    #    raise Exception("TOO LONG")
+
+    return ret
+
+def rle_v(data, blocks):
+
+    cur_col = 0
+    rl = 0
+    ret = []
+    for i in xrange(len(data)):
+        x, y = i / H, i % H
+        v = data[y * W + x]
+        if blocks[x / BS + (y / BS) * BW] > 0:
+            continue
+        if v == cur_col:
+            rl += 1
+        else:
+            ret.append(rl)
+            rl = 1
+            cur_col = 1 - cur_col
+    if rl:
+        ret.append(rl)
+    ret = ret[:-1]
+
+    if len(ret) >= 48:
+        ret = simplify(ret)
+
+    #if len(ret) >= 63:
+    #    raise Exception("TOO LONG")
+
+    return ret
 
 def simplify(data):
     if len(data) < 3:
@@ -88,25 +127,23 @@ def simplify(data):
         ret.append(data[i])
     return ret
 
-def encode(blocks, data):
-    global BL
-
+def to_nibs(data):
     if data and data[0] == 0:
         tl = 1
         data = data[1:]
     else:
         tl = 0
-    #print "  TL:", tl
     nibs = []
     for d in data:
         while d > 15:
             nibs.extend([15, 0])
             d -= 15
         nibs.append(d)
-    #print "NIBS:", nibs
-    len_nibs = len(nibs)
-    #print " LEN:", len_nibs
-    #print "BLCK:", blocks
+
+    return tl, nibs
+
+def encode(blocks, rh, rv):
+    global BL
 
     byts = []
 
@@ -124,7 +161,18 @@ def encode(blocks, data):
 
     BL = len(byts)
 
-    byts.append( (tl << 7) | len_nibs )
+    tlh, nibsh = to_nibs(rh)
+    tlv, nibsv = to_nibs(rv)
+
+    tl, nibs, horiz = (tlh, nibsh, True) if (
+        (len(nibsh) > 63 and len(nibsv) > 63 or len(nibsh) < len(nibsv) )
+        and len(nibsh) >= 16
+    ) else (tlv, nibsv, False)
+
+    len_nibs = len(nibs)
+
+    # FORCE HORIZ FOR NIBS > 63
+    byts.append( (int(horiz) << 6) | (tl << 7) | len_nibs )
 
     if len_nibs % 2 == 1:
         nibs.append(0)
@@ -144,26 +192,27 @@ def process(start, frames):
     total = 0
     count = 0
     rows = []
-    prev = get_frame(1)
+    prev, prev_data = get_frame(1)
     for i in xrange(start + JUMP, frames, JUMP):
 
         options = []
         for o in xrange(JUMP):
-            im = get_frame(i + o)
-            b, c = tween(prev, im)
+            im, data = get_frame(i + o)
+            blocks = tween(prev_data, data)
 
-            #c = simplify(c)
+            rv = rle_v(data, blocks)
+            rh = rle_h(data, blocks)
 
-            d = encode(b, c)
-            options.append((d, im))
+            d = encode(blocks, rh, rv)
+            options.append((d, im, data))
         options.sort(key=lambda x: len(x[0]))
-        d, im = options[0]
+        d, im, data = options[0]
 
         print ', '.join(map(hex, d)) + ','
 
         count += 1
         total += len(d)
-        prev = im
+        prev, prev_data = im, data
 
     print """ };"""
     print "#define FRAMES_BYTES", total
@@ -172,6 +221,7 @@ def process(start, frames):
     print "#define FRAMES_BS", BS
     print "#define FRAMES_BW", BW
     print "#define FRAMES_BL", BL
+    print "#define FRAMES_JUMP", JUMP
     print "#endif"
 
 #process(30, 6565)
