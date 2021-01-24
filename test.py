@@ -1,9 +1,9 @@
 from PIL import Image, ImageFilter, ImageOps
 
-WANT_HEIGHT = 21
+WANT_HEIGHT = 20
 WANT_WIDTH = 24
 THRESH = 200
-JUMP = 6
+JUMP = 3
 BS = 4
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
@@ -47,6 +47,7 @@ def tween(prev, im):
                         break
                     if data[dx + dy * W] != prev_data[dx + dy * W]:
                         diff += 1
+
             blocks.append(int(diff == 0))
 
     #BW = W / BS if W % BS ==0 else W / BS + 1
@@ -174,7 +175,7 @@ def process(start, frames):
     print "#endif"
 
 #process(30, 6565)
-process(30, 1500)
+process(40, 1000)
 #process(475, 482)
 
 '''

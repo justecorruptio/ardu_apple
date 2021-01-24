@@ -75,7 +75,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % 8 == 0) {
+    if (counter % 6 == 0) {
         ptr += ret;
     }
 
