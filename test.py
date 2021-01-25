@@ -1,3 +1,4 @@
+import random
 from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 20
@@ -5,8 +6,8 @@ WANT_WIDTH = 24
 BS = 4
 #MAKE SURE blocks as 2 bits left over
 
-THRESH = 250
-JUMP = 6
+THRESH = 200
+JUMP = 5
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
 
@@ -23,6 +24,7 @@ def get_frame(n):
 
     #im = im.filter(ImageFilter.GaussianBlur(3))
     im = im.filter(ImageFilter.MaxFilter(5))
+    #im = im.filter(ImageFilter.MinFilter(5))
 
     margin = (W - H * WANT_WIDTH / WANT_HEIGHT) / 2
 
@@ -40,6 +42,7 @@ def to_data(im):
 
 def tween(prev_data, data):
     blocks = []
+    errors = 0
     for y in xrange(0, H, BS):
         for x in xrange(0, W, BS):
             diff = 0
@@ -52,7 +55,23 @@ def tween(prev_data, data):
                     if data[dx + dy * W] != prev_data[dx + dy * W]:
                         diff += 1
 
-            blocks.append(int(diff == 0))
+            if random.randint(0, 100) < 60:
+            #if errors < 5:
+                allowable = 1
+            else:
+                allowable = 0
+
+            if diff <= allowable:
+                errors += 1
+                for dy in xrange(y, y+BS):
+                    if dy >= H:
+                        break
+                    for dx in xrange(x, x+BS):
+                        if dx >= W:
+                            break
+                        data[dx + dy * W] = prev_data[dx + dy * W]
+
+            blocks.append(int(diff <= allowable))
 
     return blocks
 
@@ -227,7 +246,7 @@ def process(start, frames):
     print "#define FRAMES_JUMP", JUMP
     print "#endif"
 
-process(40, 6565)
+process(40, 6523)
 #process(40, 1000)
 #process(475, 482)
 
