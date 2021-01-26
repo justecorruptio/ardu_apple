@@ -7,7 +7,7 @@ BS = 4
 #MAKE SURE blocks as 2 bits left over
 
 THRESH = 200
-JUMP = 5
+JUMP = 6
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
 
@@ -55,7 +55,7 @@ def tween(prev_data, data):
                     if data[dx + dy * W] != prev_data[dx + dy * W]:
                         diff += 1
 
-            if random.randint(0, 100) < 60:
+            if random.randint(0, 100) < 0:
             #if errors < 5:
                 allowable = 1
             else:

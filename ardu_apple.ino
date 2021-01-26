@@ -42,7 +42,7 @@ int drawFrame(uint8_t *frame) {
             int block_id = y / BS * BW + x / BS;
             if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
                 if ((PREV[pix_id / 8] & (1 << (pix_id % 8)))) {
-                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
+                    //jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
                 }
             } else {
                 while (!skip) {
@@ -55,7 +55,7 @@ int drawFrame(uint8_t *frame) {
                     ptr ++;
                 }
                 if(!color) {
-                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
+                    //jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
                     PREV[pix_id / 8] |= (1 << (pix_id % 8));
                 } else {
                     PREV[pix_id / 8] &= ~(1 << (pix_id % 8));
@@ -63,6 +63,12 @@ int drawFrame(uint8_t *frame) {
                 skip --;
             }
         }
+
+    for(y = 1; y < H - 1; y ++) {
+        for(x = 1; x < W - 1; x ++) {
+            jay.scale3(PREV, x, y);
+        }
+    }
 
     len += len%2;
     return len/2 + BL + 1;
@@ -84,7 +90,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % 4 == 0) {
+    if (counter % 2 == 0) {
         ptr += ret;
     }
 
