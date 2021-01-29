@@ -189,6 +189,7 @@ def to_nibs(data):
         #if d > 255:
         #    raise Exception("TOOOO LARGE:", d)
         if d > 15:
+            d -= 16
             nibs.append(0)
             nibs.append((d & 0xf))
             d = d >> 4
@@ -201,7 +202,7 @@ def to_nibs(data):
 
     return tl, nibs
 
-def encode(blocks, rh, rv):
+def encode(data, blocks):
     global BL
 
     byts = []
@@ -222,8 +223,9 @@ def encode(blocks, rh, rv):
 
     all_nibs = [
         # (tl, nibs), horiz, block_enc
-        (to_nibs(rh), True, False),
-        (to_nibs(rv), False, False),
+        (to_nibs(rle_h(data, blocks)), True, False),
+        (to_nibs(rle_v(data, blocks)), False, False),
+        #(to_nibs(rle_b(data, blocks)), False, True),
     ]
     all_nibs.sort(key=lambda x: len(x[0][1]))
 
@@ -266,10 +268,7 @@ def process(start, frames):
             im, data = get_frame(i + o)
             blocks = tween(prev_data, data)
 
-            rv = rle_v(data, blocks)
-            rh = rle_h(data, blocks)
-
-            d = encode(blocks, rh, rv)
+            d = encode(data, blocks)
             options.append((d, im, data))
         options.sort(key=lambda x: len(x[0]))
         d, im, data = options[0]
