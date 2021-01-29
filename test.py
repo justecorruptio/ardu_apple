@@ -191,8 +191,6 @@ def to_nibs(data):
         if d > 15:
             d -= 16
             nibs.append(0)
-            nibs.append((d & 0xf))
-            d = d >> 4
             while d > 0x7:
                 nibs.append((d & 0x7) | 0x8)
                 d = d >> 3
