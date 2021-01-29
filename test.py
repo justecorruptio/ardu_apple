@@ -130,6 +130,34 @@ def rle_v(data, blocks):
 
     return ret
 
+def rle_b(data, blocks):
+
+    cur_col = 0
+    rl = 0
+    ret = []
+    b = 4
+    for i in xrange(len(data)):
+        xb = (i / (b*b)) % (W/b)
+        yb = (i / (b*b)) / (W/b)
+
+        x = xb * b + (i % b)
+        y = yb * b + ((i % (b*b)) / b)
+
+        v = data[y * W + x]
+        if blocks[x / BS + (y / BS) * BW] > 0:
+            continue
+        if v == cur_col:
+            rl += 1
+        else:
+            ret.append(rl)
+            rl = 1
+            cur_col = 1 - cur_col
+    if rl:
+        ret.append(rl)
+    ret = ret[:-1]
+
+    return ret
+
 def simplify(data):
     if len(data) < 3:
         return data
@@ -162,6 +190,8 @@ def to_nibs(data):
         #    raise Exception("TOOOO LARGE:", d)
         if d > 15:
             nibs.append(0)
+            nibs.append((d & 0xf))
+            d = d >> 4
             while d > 0x7:
                 nibs.append((d & 0x7) | 0x8)
                 d = d >> 3
@@ -190,12 +220,14 @@ def encode(blocks, rh, rv):
 
     BL = len(byts)
 
-    tlh, nibsh = to_nibs(rh)
-    tlv, nibsv = to_nibs(rv)
+    all_nibs = [
+        # (tl, nibs), horiz, block_enc
+        (to_nibs(rh), True, False),
+        (to_nibs(rv), False, False),
+    ]
+    all_nibs.sort(key=lambda x: len(x[0][1]))
 
-    tl, nibs, horiz = (tlh, nibsh, True) if (
-        len(nibsh) < len(nibsv)
-    ) else (tlv, nibsv, False)
+    (tl, nibs), horiz, block_enc = all_nibs[0]
 
     #if len(nibs) >= 255:
     #    raise Exception("TOO LONG")
@@ -242,7 +274,7 @@ def process(start, frames):
         options.sort(key=lambda x: len(x[0]))
         d, im, data = options[0]
 
-        print ', '.join(map(hex, d)) + ','
+        print ','.join('0x%02x' % (v,) for v in d) + ','
 
         count += 1
         total += len(d)

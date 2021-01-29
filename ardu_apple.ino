@@ -27,7 +27,7 @@ int drawFrame(uint8_t *frame) {
     uint8_t color = pgm_read_byte(frame + BL + 1) >> 7 & 1;
     uint8_t horiz = pgm_read_byte(frame + BL + 1) >> 6 & 1;
     uint16_t len = pgm_read_byte(frame + BL);
-    len |= (pgm_read_byte(frame + BL + 1) & 0x3f) << 8;
+    len |= (pgm_read_byte(frame + BL + 1) & 0x1f) << 8;
     uint16_t skip = 0;
     uint16_t ptr = 0;
 
@@ -56,7 +56,9 @@ int drawFrame(uint8_t *frame) {
                     skip = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
                     ptr ++;
                     if(skip == 0) {
-                        q = 0;
+                        skip = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
+                        ptr++;
+                        q = 4;
                         while (1) {
                             p = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
                             ptr++;
@@ -77,14 +79,6 @@ int drawFrame(uint8_t *frame) {
                 skip --;
             }
         }
-
-    /*
-    for(y = 1; y < H - 1; y ++) {
-        for(x = 1; x < W - 1; x ++) {
-            jay.scale3(PREV, x, y);
-        }
-    }
-    */
 
     len += len%2;
     return len/2 + BL + 2;
