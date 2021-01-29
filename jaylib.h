@@ -15,9 +15,7 @@ class Jaylib: public Arduboy2Base {
 
     void drawFastVLine(uint8_t x, uint8_t y, uint8_t h);
     void drawFastHLine(uint8_t x, uint8_t y, uint8_t w);
-
     void drawSquare(uint8_t x, uint8_t y, uint8_t w);
-    void scale3(uint8_t* data, uint8_t x, uint8_t y);
 };
 
 #endif
