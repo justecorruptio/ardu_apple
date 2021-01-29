@@ -24,11 +24,12 @@ void setup() {
 uint8_t PREV [W * H / 8];
 
 int drawFrame(uint8_t *frame) {
-    uint8_t color = pgm_read_byte(frame + BL - 1) >> 7 & 1;
-    uint8_t horiz = pgm_read_byte(frame + BL - 1) >> 6 & 1;
-    uint8_t len = pgm_read_byte(frame + BL);
-    int16_t skip = 0;
-    uint8_t ptr = 0;
+    uint8_t color = pgm_read_byte(frame + BL + 1) >> 7 & 1;
+    uint8_t horiz = pgm_read_byte(frame + BL + 1) >> 6 & 1;
+    uint16_t len = pgm_read_byte(frame + BL);
+    len |= (pgm_read_byte(frame + BL + 1) & 0x3f) << 8;
+    uint16_t skip = 0;
+    uint16_t ptr = 0;
 
     int x, y;
 
@@ -42,7 +43,7 @@ int drawFrame(uint8_t *frame) {
             int block_id = y / BS * BW + x / BS;
             if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
                 if ((PREV[pix_id / 8] & (1 << (pix_id % 8)))) {
-                    //jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
                 }
             } else {
                 while (!skip) {
@@ -51,11 +52,11 @@ int drawFrame(uint8_t *frame) {
                         skip = 0xffff;
                         break;
                     }
-                    skip = 0xf & pgm_read_byte(frame + BL + 1 + ptr / 2) >> (4 * (ptr %2));
+                    skip = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
                     ptr ++;
                 }
                 if(!color) {
-                    //jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
+                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
                     PREV[pix_id / 8] |= (1 << (pix_id % 8));
                 } else {
                     PREV[pix_id / 8] &= ~(1 << (pix_id % 8));
@@ -64,14 +65,16 @@ int drawFrame(uint8_t *frame) {
             }
         }
 
+    /*
     for(y = 1; y < H - 1; y ++) {
         for(x = 1; x < W - 1; x ++) {
             jay.scale3(PREV, x, y);
         }
     }
+    */
 
     len += len%2;
-    return len/2 + BL + 1;
+    return len/2 + BL + 2;
 }
 
 
@@ -90,7 +93,7 @@ void loop() {
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
-    if (counter % 2 == 0) {
+    if (counter % 1 == 0) {
         ptr += ret;
     }
 
