@@ -156,10 +156,18 @@ def to_nibs(data):
         tl = 0
     nibs = []
     for d in data:
-        while d > 15:
-            nibs.extend([15, 0])
-            d -= 15
-        nibs.append(d)
+        if d == 0:
+            raise Exception("Zero width should not happen in RLE")
+        #if d > 255:
+        #    raise Exception("TOOOO LARGE:", d)
+        if d > 15:
+            nibs.append(0)
+            while d > 0x7:
+                nibs.append((d & 0x7) | 0x8)
+                d = d >> 3
+            nibs.append(d & 0x7)
+        else:
+            nibs.append(d)
 
     return tl, nibs
 

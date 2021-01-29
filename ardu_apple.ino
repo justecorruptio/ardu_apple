@@ -32,6 +32,7 @@ int drawFrame(uint8_t *frame) {
     uint16_t ptr = 0;
 
     int x, y;
+    uint8_t p, q;
 
     for (int i = 0; i < W*H; i++) {
         if (horiz) {
@@ -54,6 +55,18 @@ int drawFrame(uint8_t *frame) {
                     }
                     skip = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
                     ptr ++;
+                    if(skip == 0) {
+                        q = 0;
+                        while (1) {
+                            p = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
+                            ptr++;
+                            skip |= (p & 0x7) << q;
+                            if (!(p & 0x8)) {
+                                break;
+                            }
+                            q += 3;
+                        }
+                    }
                 }
                 if(!color) {
                     jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
