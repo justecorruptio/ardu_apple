@@ -60,9 +60,7 @@ int drawFrame(uint8_t *frame) {
                     skip = _get_nib(frame, ptr);
                     ptr ++;
                     if(skip == 0) {
-                        skip = _get_nib(frame, ptr);
-                        ptr++;
-                        q = 4;
+                        q = 0;
                         while (1) {
                             p = _get_nib(frame, ptr);
                             ptr++;
