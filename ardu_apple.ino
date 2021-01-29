@@ -23,6 +23,10 @@ void setup() {
 
 uint8_t PREV [W * H / 8];
 
+uint8_t _get_nib(uint8_t *frame, uint16_t ptr) {
+    return 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
+}
+
 int drawFrame(uint8_t *frame) {
     uint8_t color = pgm_read_byte(frame + BL + 1) >> 7 & 1;
     uint8_t horiz = pgm_read_byte(frame + BL + 1) >> 6 & 1;
@@ -53,14 +57,14 @@ int drawFrame(uint8_t *frame) {
                         skip = 0xffff;
                         break;
                     }
-                    skip = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
+                    skip = _get_nib(frame, ptr);
                     ptr ++;
                     if(skip == 0) {
-                        skip = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
+                        skip = _get_nib(frame, ptr);
                         ptr++;
                         q = 4;
                         while (1) {
-                            p = 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
+                            p = _get_nib(frame, ptr);
                             ptr++;
                             skip |= (p & 0x7) << q;
                             if (!(p & 0x8)) {
@@ -68,6 +72,7 @@ int drawFrame(uint8_t *frame) {
                             }
                             q += 3;
                         }
+                        skip += 16;
                     }
                 }
                 if(!color) {
