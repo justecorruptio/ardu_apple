@@ -1,12 +1,12 @@
 import random
 from PIL import Image, ImageFilter, ImageOps
 
-WANT_HEIGHT = 20
-WANT_WIDTH = 24
-BS = 4
+WANT_HEIGHT = 64
+WANT_WIDTH = 68
+BS = 8
 #MAKE SURE blocks as 2 bits left over
 
-THRESH = 200
+THRESH = 20
 JUMP = 6
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
@@ -186,15 +186,19 @@ def encode(blocks, rh, rv):
     tlv, nibsv = to_nibs(rv)
 
     tl, nibs, horiz = (tlh, nibsh, True) if (
-        (len(nibsh) > 63 and len(nibsv) > 63 or len(nibsh) < len(nibsv) )
+        len(nibsh) < len(nibsv)
     ) else (tlv, nibsv, False)
+
+    #if len(nibs) >= 255:
+    #    raise Exception("TOO LONG")
 
     len_nibs = len(nibs)
 
     # FORCE HORIZ FOR NIBS > 63
     #byts.append( (int(horiz) << 6) | (tl << 7) | len_nibs )
+    byts.append( len_nibs & 0xff)
+    byts.append( (len_nibs >> 8) & 0xff)
     byts[-1] |= (int(horiz) << 6) | (tl << 7)
-    byts.append( len_nibs )
 
     if len_nibs % 2 == 1:
         nibs.append(0)
@@ -246,8 +250,8 @@ def process(start, frames):
     print "#define FRAMES_JUMP", JUMP
     print "#endif"
 
-process(40, 6523)
-#process(40, 1000)
+#process(40, 6523)
+process(40, 1000)
 #process(475, 482)
 
 '''
