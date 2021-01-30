@@ -29,22 +29,3 @@ void Jaylib::largePrint(uint8_t x, uint8_t y, const uint8_t * str, uint8_t kern)
         x += 5 + kern;
     }
 }
-
-void Jaylib::drawFastVLine(uint8_t x, uint8_t y, uint8_t h) {
-    uint8_t i;
-    for(i = h; i --;)
-        drawPixel(x, y + i);
-}
-
-void Jaylib::drawFastHLine(uint8_t x, uint8_t y, uint8_t w) {
-    uint8_t i;
-    for(i = w; i --;)
-        drawPixel(x + i, y);
-}
-
-void Jaylib::drawSquare(uint8_t x, uint8_t y, uint8_t w) {
-    uint8_t i, j;
-    for(i = w; i --;)
-        for(j = w; j --;)
-            drawPixel(x + i, y + j);
-}

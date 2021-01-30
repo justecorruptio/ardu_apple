@@ -45,33 +45,27 @@ int drawFrame(uint8_t *frame) {
         else
             x = i / H, y = i % H;
 
-        int pix_id = y * W + x;
-        uint8_t pix_shift = 1 << (pix_id % 8);
         int block_id = y / BS * BW + x / BS;
-
         if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) )
             continue;
 
-        while (!skip) {
+        if(!skip) {
             color = !color;
-            if(ptr >= len) {
-                skip = 0xffff;
-                break;
-            }
-            skip = _get_nib(frame, ptr ++);
-            if(skip == 0) {
-                uint8_t p, q = 0;
-                do {
-                    p = _get_nib(frame, ptr ++);
-                    skip |= (p & 0x7) << q;
-                    q += 3;
-                } while(p & 0x8);
-                skip += 16;
-            }
+            skip = ptr >= len ? 0xffff : _get_nib(frame, ptr ++);
         }
+
+        if(!skip) { // only after read
+            uint8_t p, q = 0;
+            do {
+                p = _get_nib(frame, ptr ++);
+                skip |= (p & 0x7) << q;
+                q += 3;
+            } while(p & 0x8);
+            skip += 16;
+        }
+
         jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, !color);
         skip --;
-
     }
 
     return (len + 1) / 2 + BL + 2; // round up
@@ -79,16 +73,10 @@ int drawFrame(uint8_t *frame) {
 
 
 uint16_t ptr;
-uint8_t counter;
 void loop() {
 
-    if(!jay.nextFrame()) return;
+    //if(!jay.nextFrame()) return;
 
-    //jay.pollButtons();
-    //jay.clear();
-
-    //if(jay.justPressed(DOWN_BUTTON))
-    //    jay.exitToBootloader();
     #ifdef ARDUBOY_10
     if(~PINF & _BV(DOWN_BUTTON_BIT))
     #elif defined(AB_DEVKIT)
@@ -96,15 +84,9 @@ void loop() {
     #endif
         jay.exitToBootloader();
 
-    int ret = drawFrame(FRAMES + ptr);
-    counter ++;
-    if (counter % 1 == 0) {
-        ptr += ret;
-    }
-
-    if (ptr > FRAMES_BYTES) {
+    ptr += drawFrame(FRAMES + ptr);
+    if (ptr > FRAMES_BYTES)
         ptr = 0;
-    }
 
     jay.display(false);
 }
