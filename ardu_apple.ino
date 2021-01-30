@@ -2,7 +2,6 @@
 
 #include "frames.h"
 
-#include <avr/wdt.h>
 ARDUBOY_NO_USB
 
 Arduboy2Base ardu;
@@ -77,6 +76,7 @@ uint16_t ptr;
 void loop() {
 
     //if(!ardu.nextFrame()) return;
+    ardu.delayShort(30);
 
     #ifdef ARDUBOY_10
     if(~PINF & _BV(DOWN_BUTTON_BIT))
@@ -89,7 +89,7 @@ void loop() {
     if (ptr > FRAMES_BYTES)
         ptr = 0;
 
-    ardu.display(false);
+    ardu.display(!ptr);
 }
 
 // avr-objdump -C -S -j.text

@@ -95,7 +95,7 @@ def rle_h(data, blocks):
     ret = ret[:-1]
 
     #if len(ret) >= 64:
-    #    ret = simplify(ret)
+    #ret = simplify(ret)
 
     #if len(ret) >= 63:
     #    raise Exception("TOO LONG")
@@ -123,7 +123,7 @@ def rle_v(data, blocks):
     ret = ret[:-1]
 
     #if len(ret) >= 64:
-    #    ret = simplify(ret)
+    #ret = simplify(ret)
 
     #if len(ret) >= 63:
     #    raise Exception("TOO LONG")
@@ -165,8 +165,8 @@ def simplify(data):
     ret = [data[0]]
     i = 1
     while i < len(data) - 1:
-        if data[i] == 1 and data[i + 1] != 1 and data[i - 1] != 1:
-            ret[-1] += data[i + 1] + 1
+        if data[i] <=2 and data[i + 1] > 1 and data[i - 1] > 1:
+            ret[-1] += data[i + 1] + data[i]
             i += 1
         else:
             ret.append(data[i])
