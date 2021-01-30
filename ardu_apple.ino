@@ -30,54 +30,50 @@ uint8_t _get_nib(uint8_t *frame, uint16_t ptr) {
 }
 
 int drawFrame(uint8_t *frame) {
-    uint8_t color = pgm_read_byte(frame + BL + 1) >> 7 & 1;
-    uint8_t horiz = pgm_read_byte(frame + BL + 1) >> 6 & 1;
-    uint16_t len = pgm_read_byte(frame + BL);
-    len |= (pgm_read_byte(frame + BL + 1) & 0x1f) << 8;
+    uint16_t len = pgm_read_word(frame + BL);
+
+    uint8_t color = len >> 15 & 1;
+    uint8_t horiz = len >> 14 & 1;
+    len &= 0x3fff;
+
     uint16_t skip = 0;
     uint16_t ptr = 0;
 
     int x, y;
-    uint8_t p, q;
 
     for (int i = 0; i < W*H; i++) {
-        if (horiz) {
-            x = i % W; y = i / W;
-        } else {
-            x = i / H; y = i % H;
-        }
+        if (horiz)
+            x = i % W, y = i / W;
+        else
+            x = i / H, y = i % H;
+
         int pix_id = y * W + x;
         uint8_t pix_shift = 1 << (pix_id % 8);
         int block_id = y / BS * BW + x / BS;
+
         if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
-            if (PREV[pix_id / 8] & pix_shift) {
-                jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
-            }
+            if (PREV[pix_id / 8] & pix_shift)
+                jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY);
         } else {
             while (!skip) {
-                color = 1 - color;
+                color = !color;
                 if(ptr >= len) {
                     skip = 0xffff;
                     break;
                 }
-                skip = _get_nib(frame, ptr);
-                ptr ++;
+                skip = _get_nib(frame, ptr ++);
                 if(skip == 0) {
-                    q = 0;
-                    while (1) {
-                        p = _get_nib(frame, ptr);
-                        ptr++;
+                    uint8_t p, q = 0;
+                    do {
+                        p = _get_nib(frame, ptr ++);
                         skip |= (p & 0x7) << q;
-                        if (!(p & 0x8)) {
-                            break;
-                        }
                         q += 3;
-                    }
+                    } while(p & 0x8);
                     skip += 16;
                 }
             }
             if(!color) {
-                jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
+                jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY);
                 PREV[pix_id / 8] |= pix_shift;
             } else {
                 PREV[pix_id / 8] &= ~pix_shift;
@@ -86,13 +82,12 @@ int drawFrame(uint8_t *frame) {
         }
     }
 
-    len += len%2;
-    return len/2 + BL + 2;
+    return (len + 1) / 2 + BL + 2; // round up
 }
 
 
-uint32_t ptr;
-uint32_t counter;
+uint16_t ptr;
+uint8_t counter;
 void loop() {
 
     if(!jay.nextFrame()) return;
