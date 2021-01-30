@@ -1,6 +1,8 @@
 #include "jaylib.h"
-#include "utils.h"
 #include "frames.h"
+
+#include <avr/wdt.h>
+ARDUBOY_NO_USB
 
 Jaylib jay;
 
@@ -44,44 +46,45 @@ int drawFrame(uint8_t *frame) {
         } else {
             x = i / H; y = i % H;
         }
-            int pix_id = y * W + x;
-            int block_id = y / BS * BW + x / BS;
-            if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
-                if ((PREV[pix_id / 8] & (1 << (pix_id % 8)))) {
-                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
-                }
-            } else {
-                while (!skip) {
-                    color = 1 - color;
-                    if(ptr >= len) {
-                        skip = 0xffff;
-                        break;
-                    }
-                    skip = _get_nib(frame, ptr);
-                    ptr ++;
-                    if(skip == 0) {
-                        q = 0;
-                        while (1) {
-                            p = _get_nib(frame, ptr);
-                            ptr++;
-                            skip |= (p & 0x7) << q;
-                            if (!(p & 0x8)) {
-                                break;
-                            }
-                            q += 3;
-                        }
-                        skip += 16;
-                    }
-                }
-                if(!color) {
-                    jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
-                    PREV[pix_id / 8] |= (1 << (pix_id % 8));
-                } else {
-                    PREV[pix_id / 8] &= ~(1 << (pix_id % 8));
-                }
-                skip --;
+        int pix_id = y * W + x;
+        uint8_t pix_shift = 1 << (pix_id % 8);
+        int block_id = y / BS * BW + x / BS;
+        if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
+            if (PREV[pix_id / 8] & pix_shift) {
+                jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
             }
+        } else {
+            while (!skip) {
+                color = 1 - color;
+                if(ptr >= len) {
+                    skip = 0xffff;
+                    break;
+                }
+                skip = _get_nib(frame, ptr);
+                ptr ++;
+                if(skip == 0) {
+                    q = 0;
+                    while (1) {
+                        p = _get_nib(frame, ptr);
+                        ptr++;
+                        skip |= (p & 0x7) << q;
+                        if (!(p & 0x8)) {
+                            break;
+                        }
+                        q += 3;
+                    }
+                    skip += 16;
+                }
+            }
+            if(!color) {
+                jay.drawSquare(x * FACTOR + OFFX, y * FACTOR + OFFY, FACTOR);
+                PREV[pix_id / 8] |= pix_shift;
+            } else {
+                PREV[pix_id / 8] &= ~pix_shift;
+            }
+            skip --;
         }
+    }
 
     len += len%2;
     return len/2 + BL + 2;
@@ -97,9 +100,14 @@ void loop() {
     //jay.pollButtons();
     jay.clear();
 
-    //jay.smallPrint(0, 0, "HELLO WORLD");
-    //jay.smallPrint(100, 21, itoa(jay.cpuLoad()));
-
+    //if(jay.justPressed(DOWN_BUTTON))
+    //    jay.exitToBootloader();
+    #ifdef ARDUBOY_10
+    if(~PINF & _BV(DOWN_BUTTON_BIT))
+    #elif defined(AB_DEVKIT)
+    if(~PINB & _BV(DOWN_BUTTON_BIT))
+    #endif
+        jay.exitToBootloader();
 
     int ret = drawFrame(FRAMES + ptr);
     counter ++;
