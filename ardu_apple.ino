@@ -23,8 +23,6 @@ void setup() {
 #define OFFX ((128 - W * FACTOR) / 2)
 #define OFFY ((64 - H * FACTOR) / 2)
 
-uint8_t PREV [W * H / 8];
-
 uint8_t _get_nib(uint8_t *frame, uint16_t ptr) {
     return 0xf & pgm_read_byte(frame + BL + 2 + ptr / 2) >> (4 * (ptr %2));
 }
@@ -34,7 +32,7 @@ int drawFrame(uint8_t *frame) {
 
     uint8_t color = len >> 15 & 1;
     uint8_t horiz = len >> 14 & 1;
-    len &= 0x3fff;
+    len &= 0x1fff;
 
     uint16_t skip = 0;
     uint16_t ptr = 0;
@@ -51,35 +49,29 @@ int drawFrame(uint8_t *frame) {
         uint8_t pix_shift = 1 << (pix_id % 8);
         int block_id = y / BS * BW + x / BS;
 
-        if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ) {
-            if (PREV[pix_id / 8] & pix_shift)
-                jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY);
-        } else {
-            while (!skip) {
-                color = !color;
-                if(ptr >= len) {
-                    skip = 0xffff;
-                    break;
-                }
-                skip = _get_nib(frame, ptr ++);
-                if(skip == 0) {
-                    uint8_t p, q = 0;
-                    do {
-                        p = _get_nib(frame, ptr ++);
-                        skip |= (p & 0x7) << q;
-                        q += 3;
-                    } while(p & 0x8);
-                    skip += 16;
-                }
+        if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) )
+            continue;
+
+        while (!skip) {
+            color = !color;
+            if(ptr >= len) {
+                skip = 0xffff;
+                break;
             }
-            if(!color) {
-                jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY);
-                PREV[pix_id / 8] |= pix_shift;
-            } else {
-                PREV[pix_id / 8] &= ~pix_shift;
+            skip = _get_nib(frame, ptr ++);
+            if(skip == 0) {
+                uint8_t p, q = 0;
+                do {
+                    p = _get_nib(frame, ptr ++);
+                    skip |= (p & 0x7) << q;
+                    q += 3;
+                } while(p & 0x8);
+                skip += 16;
             }
-            skip --;
         }
+        jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, !color);
+        skip --;
+
     }
 
     return (len + 1) / 2 + BL + 2; // round up
@@ -93,7 +85,7 @@ void loop() {
     if(!jay.nextFrame()) return;
 
     //jay.pollButtons();
-    jay.clear();
+    //jay.clear();
 
     //if(jay.justPressed(DOWN_BUTTON))
     //    jay.exitToBootloader();
@@ -112,11 +104,11 @@ void loop() {
 
     if (ptr > FRAMES_BYTES) {
         ptr = 0;
-        for(int i = 0; i < W * H / 8; i++)
-            PREV[i] = 0;
     }
 
-    jay.display();
+    jay.display(false);
 }
+
+// avr-objdump -C -S -j.text
 
 // vim:syntax=c
