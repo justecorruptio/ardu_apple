@@ -1,6 +1,4 @@
 #include "jaylib.h"
-#include "utils.h"
-#include "frames.h"
 
 void Jaylib::drawBand(uint8_t x, uint8_t y, const uint8_t * sprite, uint8_t cols) {
     uint16_t s;
