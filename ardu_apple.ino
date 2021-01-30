@@ -1,13 +1,14 @@
-#include "jaylib.h"
+#include <Arduboy2.h>
+
 #include "frames.h"
 
 #include <avr/wdt.h>
 ARDUBOY_NO_USB
 
-Jaylib jay;
+Arduboy2Base ardu;
 
 void setup() {
-    jay.boot();
+    ardu.boot();
 }
 
 #define W FRAMES_W
@@ -64,7 +65,7 @@ int drawFrame(uint8_t *frame) {
             skip += 16;
         }
 
-        jay.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, !color);
+        ardu.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, !color);
         skip --;
     }
 
@@ -75,20 +76,20 @@ int drawFrame(uint8_t *frame) {
 uint16_t ptr;
 void loop() {
 
-    //if(!jay.nextFrame()) return;
+    //if(!ardu.nextFrame()) return;
 
     #ifdef ARDUBOY_10
     if(~PINF & _BV(DOWN_BUTTON_BIT))
     #elif defined(AB_DEVKIT)
     if(~PINB & _BV(DOWN_BUTTON_BIT))
     #endif
-        jay.exitToBootloader();
+        ardu.exitToBootloader();
 
     ptr += drawFrame(FRAMES + ptr);
     if (ptr > FRAMES_BYTES)
         ptr = 0;
 
-    jay.display(false);
+    ardu.display(false);
 }
 
 // avr-objdump -C -S -j.text
