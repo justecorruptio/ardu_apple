@@ -42,7 +42,7 @@ def to_data(im):
     return map(lambda x: int(x > 0), list(im.getdata()))
 
 def block_unchanged(prev_data, data, x, y): # -> unchanged
-    diff = [0, 0, 0] #middle, edge, corner
+    d = [0] * 16
     for dy in xrange(BS):
         if y + dy >= H:
             break
@@ -51,33 +51,28 @@ def block_unchanged(prev_data, data, x, y): # -> unchanged
                 break
             loc = (x + dx) + (y + dy) * W
             if data[loc] != prev_data[loc]:
-                bounds = int(dx == 0) + int(dx == BS - 1) + int(dy == 0) + int(dy == BS - 1)
-                diff[bounds] += 1
+               d[
+                    int(dx == 0) << 0 |
+                    int(dy == 0) << 1 |
+                    int(dx == BS - 1) << 2 |
+                    int(dy == BS - 1) << 3
+                ] += 1
 
     r = random.randint(0, 100)
-    m, e, c = diff
+    c = d[0b1001] + d[0b1100] + d[0b0110] + d[0b0011]
+    e = d[0b0001] + d[0b0010] + d[0b0100] + d[0b1000]
+    m = sum(d) - c - e
 
     return (
-        (m + e + c == 0)
+        (sum(d) == 0)
         or
-        (c == 1 and e == 0 and m == 0 and r <= 40)
+        (c == 1 and e == 0 and m == 0 and r < 50)
         or
-        (c == 0 and e <= 3 and m < 8)
+        (c == 0 and e <= 5 and all(d[i] <= 2 for i in [0b0001, 0b0010, 0b0100, 0b1000]) and m < 8)
         or
-        (c == 0 and e == 1 and m < 12)
-        or
-        (c == 0 and e == 0 and m < 16)
+        (c == 0 and e == 1 and m < 10)
+        #/or (c == 0 and e == 0 and m < 12)
     )
-    '''
-    if diff[2] > 0:
-        rate, limit = 40, 1
-    else:
-        rate, limit = 100, BS * 2
-
-    allowable = limit if random.randint(0, 100) <= rate else 0
-
-    return sum(diff) <= allowable
-    '''
 
 def tween(prev_data, data):
     blocks = []
