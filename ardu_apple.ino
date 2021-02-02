@@ -32,6 +32,7 @@ int drawFrame(uint8_t *frame) {
 
     uint8_t color = len >> 15 & 1;
     uint8_t horiz = len >> 14 & 1;
+    uint8_t zigzag = len >> 13 & 1;
     len &= 0x1fff;
 
     uint16_t skip = 0;
@@ -40,14 +41,21 @@ int drawFrame(uint8_t *frame) {
     int x, y;
 
     for (int i = 0; i < W*H; i++) {
-        if (horiz)
-            x = i % W, y = i / W;
-        else
-            x = i / H, y = i % H;
+        if (horiz) {
+            y = i / W;
+            x = y % 2 && zigzag ? W - 1 - i % W : i % W;
+        }
+        else {
+            x = i / H;
+            y = x % 2 && zigzag ? H - 1 - i % H : i % H;
+        }
 
         int block_id = y / BS * BW + x / BS;
-        if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) )
+        if( pgm_read_byte(frame + block_id / 8) & (1 << (block_id % 8)) ){
+            //ardu.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, !ardu.getPixel(x * FACTOR + OFFX, y * FACTOR + OFFY));
+            //ardu.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, 0);
             continue;
+        }
 
         if(!skip) {
             color = !color;
@@ -85,7 +93,10 @@ void loop() {
     #endif
         ardu.exitToBootloader();
 
-    ptr += drawFrame(FRAMES + ptr);
+    uint8_t ret = drawFrame(FRAMES + ptr);
+    //if(~PINF & _BV(RIGHT_BUTTON_BIT))
+        ptr += ret;
+
     if (ptr > FRAMES_BYTES)
         ptr = 0;
 

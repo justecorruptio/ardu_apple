@@ -1,4 +1,5 @@
 import random
+random.seed(0)
 from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 64
@@ -55,7 +56,7 @@ def tween(prev_data, data):
                     if data[dx + dy * W] != prev_data[dx + dy * W]:
                         diff += 1
 
-            if random.randint(0, 100) < 0:
+            if random.randint(0, 100) < 40:
             #if errors < 5:
                 allowable = 1
             else:
@@ -75,40 +76,12 @@ def tween(prev_data, data):
 
     return blocks
 
-def rle_h(data, blocks):
-
-    cur_col = 0
-    rl = 0
-    ret = []
-    for i, v in enumerate(data):
-        x, y = i % W, i / W
-        if blocks[x / BS + (y / BS) * BW] > 0:
-            continue
-        if v == cur_col:
-            rl += 1
-        else:
-            ret.append(rl)
-            rl = 1
-            cur_col = 1 - cur_col
-    if rl:
-        ret.append(rl)
-    ret = ret[:-1]
-
-    #if len(ret) >= 64:
-    #ret = simplify(ret)
-
-    #if len(ret) >= 63:
-    #    raise Exception("TOO LONG")
-
-    return ret
-
-def rle_v(data, blocks):
-
+def rle(data, blocks, xy):
     cur_col = 0
     rl = 0
     ret = []
     for i in xrange(len(data)):
-        x, y = i / H, i % H
+        x, y = xy(i)
         v = data[y * W + x]
         if blocks[x / BS + (y / BS) * BW] > 0:
             continue
@@ -124,9 +97,6 @@ def rle_v(data, blocks):
 
     #if len(ret) >= 64:
     #ret = simplify(ret)
-
-    #if len(ret) >= 63:
-    #    raise Exception("TOO LONG")
 
     return ret
 
@@ -200,6 +170,26 @@ def to_nibs(data):
 
     return tl, nibs
 
+def xy_h(i):
+    return i % W, i / W
+
+def xy_v(i):
+    return i / H, i % H
+
+def xy_hz(i):
+    y = i / W
+    if y % 2 == 0:
+        return i % W, y
+    else:
+        return W - 1 - i % W, y
+
+def xy_vz(i):
+    x = i / H
+    if x % 2 == 0:
+        return x, i % H
+    else:
+        return x, H - 1 - i % H
+
 def encode(data, blocks):
     global BL
 
@@ -220,14 +210,15 @@ def encode(data, blocks):
     BL = len(byts)
 
     all_nibs = [
-        # (tl, nibs), horiz, block_enc
-        (to_nibs(rle_h(data, blocks)), True, False),
-        (to_nibs(rle_v(data, blocks)), False, False),
-        #(to_nibs(rle_b(data, blocks)), False, True),
+        # (tl, nibs), horiz, zig
+        (to_nibs(rle(data, blocks, xy_h)), True, False),
+        (to_nibs(rle(data, blocks, xy_v)), False, False),
+        (to_nibs(rle(data, blocks, xy_hz)), True, True),
+        (to_nibs(rle(data, blocks, xy_vz)), False, True),
     ]
     all_nibs.sort(key=lambda x: len(x[0][1]))
 
-    (tl, nibs), horiz, block_enc = all_nibs[0]
+    (tl, nibs), horiz, zig = all_nibs[0]
 
     #if len(nibs) >= 255:
     #    raise Exception("TOO LONG")
@@ -237,8 +228,8 @@ def encode(data, blocks):
     # FORCE HORIZ FOR NIBS > 63
     #byts.append( (int(horiz) << 6) | (tl << 7) | len_nibs )
     byts.append( len_nibs & 0xff)
-    byts.append( (len_nibs >> 8) & 0xff)
-    byts[-1] |= (int(horiz) << 6) | (tl << 7)
+    byts.append( (len_nibs >> 8) & 0x1f)
+    byts[-1] |= (int(zig) << 5 | int(horiz) << 6) | (tl << 7)
 
     if len_nibs % 2 == 1:
         nibs.append(0)
