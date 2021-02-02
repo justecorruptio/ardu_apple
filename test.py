@@ -266,7 +266,7 @@ def process(start, frames):
     print "#endif"
 
 #process(40, 6523)
-process(40, 1000)
+process(40, 2200)
 #process(475, 482)
 
 '''
