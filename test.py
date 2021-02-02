@@ -2,8 +2,8 @@ import random
 random.seed(0)
 from PIL import Image, ImageFilter, ImageOps
 
-WANT_HEIGHT = 64
-WANT_WIDTH = 68
+WANT_HEIGHT = 32
+WANT_WIDTH = 34
 BS = 8
 #MAKE SURE blocks as 2 bits left over
 
@@ -113,7 +113,7 @@ def rle(data, blocks, xy):
     ret = ret[:-1]
 
     #if len(ret) >= 64:
-    #ret = simplify(ret)
+    ret = simplify(ret)
 
     return ret
 
@@ -124,7 +124,7 @@ def simplify(data):
     ret = [data[0]]
     i = 1
     while i < len(data) - 1:
-        if data[i] <=2 and data[i + 1] > 1 and data[i - 1] > 1:
+        if data[i] <=2 and data[i + 1] > 1 and data[i - 1] > 1 and random.randint(0, 100) < 20:
             ret[-1] += data[i + 1] + data[i]
             i += 1
         else:
@@ -265,8 +265,8 @@ def process(start, frames):
     print "#define FRAMES_JUMP", JUMP
     print "#endif"
 
-#process(40, 6523)
-process(40, 1000)
+process(40, 6523)
+#process(40, 1000)
 #process(475, 482)
 
 '''

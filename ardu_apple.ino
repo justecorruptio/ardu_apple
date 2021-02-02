@@ -73,6 +73,9 @@ int drawFrame(uint8_t *frame) {
         }
 
         ardu.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY, !color);
+        ardu.drawPixel(x * FACTOR + OFFX + 1, y * FACTOR + OFFY, !color);
+        ardu.drawPixel(x * FACTOR + OFFX + 1, y * FACTOR + OFFY + 1, !color);
+        ardu.drawPixel(x * FACTOR + OFFX, y * FACTOR + OFFY + 1, !color);
         skip --;
     }
 
@@ -84,7 +87,7 @@ uint16_t ptr;
 void loop() {
 
     //if(!ardu.nextFrame()) return;
-    ardu.delayShort(30);
+    ardu.delayShort(100);
 
     #ifdef ARDUBOY_10
     if(~PINF & _BV(DOWN_BUTTON_BIT))
@@ -94,7 +97,7 @@ void loop() {
         ardu.exitToBootloader();
 
     uint8_t ret = drawFrame(FRAMES + ptr);
-    if(~PINF & _BV(RIGHT_BUTTON_BIT))
+    //if(~PINF & _BV(RIGHT_BUTTON_BIT))
         ptr += ret;
 
     if (ptr > FRAMES_BYTES)
