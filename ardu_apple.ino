@@ -94,7 +94,7 @@ void loop() {
         ardu.exitToBootloader();
 
     uint8_t ret = drawFrame(FRAMES + ptr);
-    //if(~PINF & _BV(RIGHT_BUTTON_BIT))
+    if(~PINF & _BV(RIGHT_BUTTON_BIT))
         ptr += ret;
 
     if (ptr > FRAMES_BYTES)

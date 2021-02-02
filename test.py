@@ -41,29 +41,51 @@ def get_frame(n):
 def to_data(im):
     return map(lambda x: int(x > 0), list(im.getdata()))
 
+def block_unchanged(prev_data, data, x, y): # -> unchanged
+    diff = [0, 0, 0] #middle, edge, corner
+    for dy in xrange(BS):
+        if y + dy >= H:
+            break
+        for dx in xrange(BS):
+            if x + dx >= W:
+                break
+            loc = (x + dx) + (y + dy) * W
+            if data[loc] != prev_data[loc]:
+                bounds = int(dx == 0) + int(dx == BS - 1) + int(dy == 0) + int(dy == BS - 1)
+                diff[bounds] += 1
+
+    r = random.randint(0, 100)
+    m, e, c = diff
+
+    return (
+        (m + e + c == 0)
+        or
+        (c == 1 and e == 0 and m == 0 and r <= 40)
+        or
+        (c == 0 and e <= 3 and m < 8)
+        or
+        (c == 0 and e == 1 and m < 12)
+        or
+        (c == 0 and e == 0 and m < 16)
+    )
+    '''
+    if diff[2] > 0:
+        rate, limit = 40, 1
+    else:
+        rate, limit = 100, BS * 2
+
+    allowable = limit if random.randint(0, 100) <= rate else 0
+
+    return sum(diff) <= allowable
+    '''
+
 def tween(prev_data, data):
     blocks = []
-    errors = 0
     for y in xrange(0, H, BS):
         for x in xrange(0, W, BS):
-            diff = 0
-            for dy in xrange(y, y+BS):
-                if dy >= H:
-                    break
-                for dx in xrange(x, x+BS):
-                    if dx >= W:
-                        break
-                    if data[dx + dy * W] != prev_data[dx + dy * W]:
-                        diff += 1
 
-            if random.randint(0, 100) < 40:
-            #if errors < 5:
-                allowable = 1
-            else:
-                allowable = 0
-
-            if diff <= allowable:
-                errors += 1
+            unchanged = block_unchanged(prev_data, data, x, y)
+            if unchanged: # overwrite data
                 for dy in xrange(y, y+BS):
                     if dy >= H:
                         break
@@ -72,7 +94,7 @@ def tween(prev_data, data):
                             break
                         data[dx + dy * W] = prev_data[dx + dy * W]
 
-            blocks.append(int(diff <= allowable))
+            blocks.append(int(bool(unchanged)))
 
     return blocks
 
@@ -97,34 +119,6 @@ def rle(data, blocks, xy):
 
     #if len(ret) >= 64:
     #ret = simplify(ret)
-
-    return ret
-
-def rle_b(data, blocks):
-
-    cur_col = 0
-    rl = 0
-    ret = []
-    b = 4
-    for i in xrange(len(data)):
-        xb = (i / (b*b)) % (W/b)
-        yb = (i / (b*b)) / (W/b)
-
-        x = xb * b + (i % b)
-        y = yb * b + ((i % (b*b)) / b)
-
-        v = data[y * W + x]
-        if blocks[x / BS + (y / BS) * BW] > 0:
-            continue
-        if v == cur_col:
-            rl += 1
-        else:
-            ret.append(rl)
-            rl = 1
-            cur_col = 1 - cur_col
-    if rl:
-        ret.append(rl)
-    ret = ret[:-1]
 
     return ret
 
@@ -156,8 +150,6 @@ def to_nibs(data):
     for d in data:
         if d == 0:
             raise Exception("Zero width should not happen in RLE")
-        #if d > 255:
-        #    raise Exception("TOOOO LARGE:", d)
         if d > 15:
             d -= 16
             nibs.append(0)
@@ -220,8 +212,8 @@ def encode(data, blocks):
 
     (tl, nibs), horiz, zig = all_nibs[0]
 
-    #if len(nibs) >= 255:
-    #    raise Exception("TOO LONG")
+    if len(nibs) >= 0x1fff:
+        raise Exception("TOO LONG")
 
     len_nibs = len(nibs)
 
