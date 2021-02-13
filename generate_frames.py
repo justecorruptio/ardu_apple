@@ -2,13 +2,8 @@ import random
 random.seed(0)
 from PIL import Image, ImageFilter, ImageOps
 
-WANT_HEIGHT = 64
-WANT_WIDTH = 68
-BS = 8
-#MAKE SURE blocks as 2 bits left over
+from settings import *
 
-THRESH = 20
-JUMP = 6
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
 
