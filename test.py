@@ -3,12 +3,12 @@ random.seed(0)
 from PIL import Image, ImageFilter, ImageOps
 
 WANT_HEIGHT = 64
-WANT_WIDTH = 68
+WANT_WIDTH = 120
 BS = 8
 #MAKE SURE blocks as 2 bits left over
 
-THRESH = 20
-JUMP = 6
+THRESH = 78
+JUMP = 3
 BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
 BL = 0
 
@@ -19,6 +19,8 @@ H = WANT_HEIGHT
 def get_frame(n):
     im = Image.open('data/frames/out%06d.png' % (n,))
     W, H = im.size
+
+    #im = im.convert(mode='P', palette='ADAPTIVE', colors=2)
 
     im = ImageOps.grayscale(im)
     im = im.point(lambda v: 0 if v < THRESH else 255)
@@ -66,11 +68,11 @@ def block_unchanged(prev_data, data, x, y): # -> unchanged
     return (
         (sum(d) == 0)
         or
-        (c == 1 and e == 0 and m == 0 and r < 50)
+        (c == 1 and e == 0 and m == 0 and r < 20)
         or
-        (c == 0 and e <= 5 and all(d[i] <= 2 for i in [0b0001, 0b0010, 0b0100, 0b1000]) and m < 8)
+        (c == 0 and e <= 16 and all(d[i] <= 4 for i in [0b0001, 0b0010, 0b0100, 0b1000]) and m < 4)
         or
-        (c == 0 and e == 1 and m < 10)
+        (c == 0 and e == 1 and m < 6)
         #/or (c == 0 and e == 0 and m < 12)
     )
 
@@ -113,7 +115,7 @@ def rle(data, blocks, xy):
     ret = ret[:-1]
 
     #if len(ret) >= 64:
-    #ret = simplify(ret)
+    ret = simplify(ret)
 
     return ret
 
@@ -124,7 +126,7 @@ def simplify(data):
     ret = [data[0]]
     i = 1
     while i < len(data) - 1:
-        if data[i] <=2 and data[i + 1] > 1 and data[i - 1] > 1:
+        if data[i] <=2 and data[i + 1] > 1 and data[i - 1] > 1 and random.randint(0, 100) < 0:
             ret[-1] += data[i + 1] + data[i]
             i += 1
         else:
@@ -266,7 +268,7 @@ def process(start, frames):
     print "#endif"
 
 #process(40, 6523)
-process(40, 2200)
+process(0, 1000)
 #process(475, 482)
 
 '''

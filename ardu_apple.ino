@@ -84,7 +84,7 @@ uint16_t ptr;
 void loop() {
 
     //if(!ardu.nextFrame()) return;
-    ardu.delayShort(30);
+    //ardu.delayShort(10);
 
     #ifdef ARDUBOY_10
     if(~PINF & _BV(DOWN_BUTTON_BIT))
@@ -97,7 +97,7 @@ void loop() {
     //if(~PINF & _BV(RIGHT_BUTTON_BIT))
         ptr += ret;
 
-    if (ptr > FRAMES_BYTES)
+    if (ptr >= FRAMES_BYTES)
         ptr = 0;
 
     ardu.display(!ptr);
