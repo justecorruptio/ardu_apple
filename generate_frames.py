@@ -4,12 +4,17 @@ from PIL import Image, ImageFilter, ImageOps
 
 from settings import *
 
-BW = WANT_WIDTH / BS if WANT_WIDTH % BS == 0 else WANT_WIDTH / BS + 1
+BS = BLOCK_SIZE
+
+BW = WANT_WIDTH // BS if WANT_WIDTH % BS == 0 else WANT_WIDTH // BS + 1
 BL = 0
 
 W = WANT_WIDTH
 H = WANT_HEIGHT
 
+
+# hacks for python3
+xrange = range
 
 def get_frame(n):
     im = Image.open('data/frames/out%06d.png' % (n,))
@@ -18,11 +23,14 @@ def get_frame(n):
     im = ImageOps.grayscale(im)
     im = im.point(lambda v: 0 if v < THRESH else 255)
 
-    #im = im.filter(ImageFilter.GaussianBlur(3))
-    im = im.filter(ImageFilter.MaxFilter(5))
-    #im = im.filter(ImageFilter.MinFilter(5))
+    if BLUR:
+        im = im.filter(ImageFilter.GaussianBlur(BLUR))
+    if MAX_FILTER:
+        im = im.filter(ImageFilter.MaxFilter(MAX_FILTER))
+    if MIN_FILTER:
+        im = im.filter(ImageFilter.MinFilter(MIN_FILTER))
 
-    margin = (W - H * WANT_WIDTH / WANT_HEIGHT) / 2
+    margin = (W - H * WANT_WIDTH // WANT_HEIGHT) // 2
 
     im = im.crop((margin, 0, W - margin , H))
     W, H = im.size
@@ -30,13 +38,12 @@ def get_frame(n):
     im = im.resize((WANT_WIDTH, WANT_HEIGHT))
     W, H = im.size
 
-    #im = im.convert('1')
     return im, to_data(im)
 
 def to_data(im):
-    return map(lambda x: int(x > 0), list(im.getdata()))
+    return list(map(lambda x: int(x > 0), list(im.getdata())))
 
-def block_unchanged(prev_data, data, x, y): # -> unchanged
+def block_unchanged(prev_data, data, x, y):
     d = [0] * 16
     for dy in xrange(BS):
         if y + dy >= H:
@@ -61,12 +68,15 @@ def block_unchanged(prev_data, data, x, y): # -> unchanged
     return (
         (sum(d) == 0)
         or
-        (c == 1 and e == 0 and m == 0 and r < 50)
+        (c == 1 and e == 0 and m == 0 and r < UNCHANGED_CORNER_RANDOM)
         or
-        (c == 0 and e <= 5 and all(d[i] <= 2 for i in [0b0001, 0b0010, 0b0100, 0b1000]) and m < 8)
+        (c == 0
+            and e <= UNCHANGED_EDGE_LIMIT
+            and all(d[i] <= 2 for i in [0b0001, 0b0010, 0b0100, 0b1000])
+            and m < UNCHANGED_EDGE_CENTER_LIMIT
+        )
         or
-        (c == 0 and e == 1 and m < 10)
-        #/or (c == 0 and e == 0 and m < 12)
+        (c == 0 and e == 1 and m < UNCHANGED_SINGLE_CENTER_LIMIT)
     )
 
 def tween(prev_data, data):
@@ -94,8 +104,8 @@ def rle(data, blocks, xy):
     ret = []
     for i in xrange(len(data)):
         x, y = xy(i)
-        v = data[y * W + x]
-        if blocks[x / BS + (y / BS) * BW] > 0:
+        v = data[int(y * W + x)]
+        if blocks[x // BS + (y // BS) * BW] > 0:
             continue
         if v == cur_col:
             rl += 1
@@ -107,8 +117,8 @@ def rle(data, blocks, xy):
         ret.append(rl)
     ret = ret[:-1]
 
-    #if len(ret) >= 64:
-    #ret = simplify(ret)
+    if len(ret) >= SIMPLIFY_LIMIT:
+        ret = simplify(ret)
 
     return ret
 
@@ -119,7 +129,7 @@ def simplify(data):
     ret = [data[0]]
     i = 1
     while i < len(data) - 1:
-        if data[i] <=2 and data[i + 1] > 1 and data[i - 1] > 1:
+        if data[i] <= SIMPLIFY_RUN_LENGTH and data[i + 1] > 1 and data[i - 1] > 1:
             ret[-1] += data[i + 1] + data[i]
             i += 1
         else:
@@ -153,20 +163,20 @@ def to_nibs(data):
     return tl, nibs
 
 def xy_h(i):
-    return i % W, i / W
+    return i % W, i // W
 
 def xy_v(i):
-    return i / H, i % H
+    return i // H, i % H
 
 def xy_hz(i):
-    y = i / W
+    y = i // W
     if y % 2 == 0:
         return i % W, y
     else:
         return W - 1 - i % W, y
 
 def xy_vz(i):
-    x = i / H
+    x = i // H
     if x % 2 == 0:
         return x, i % H
     else:
@@ -207,8 +217,6 @@ def encode(data, blocks):
 
     len_nibs = len(nibs)
 
-    # FORCE HORIZ FOR NIBS > 63
-    #byts.append( (int(horiz) << 6) | (tl << 7) | len_nibs )
     byts.append( len_nibs & 0xff)
     byts.append( (len_nibs >> 8) & 0x1f)
     byts[-1] |= (int(zig) << 5 | int(horiz) << 6) | (tl << 7)
@@ -221,12 +229,10 @@ def encode(data, blocks):
 
     return byts
 
-
-
 def process(start, frames):
-    print "#ifndef FRAMES_H"
-    print "#define FRAMES_H"
-    print "PROGMEM const uint8_t FRAMES [] = {"
+    print("#ifndef FRAMES_H")
+    print("#define FRAMES_H")
+    print("PROGMEM const uint8_t FRAMES [] = {")
 
     total = 0
     count = 0
@@ -244,31 +250,22 @@ def process(start, frames):
         options.sort(key=lambda x: len(x[0]))
         d, im, data = options[0]
 
-        print ','.join('0x%02x' % (v,) for v in d) + ','
+        print(','.join('0x%02x' % (v,) for v in d) + ',')
 
         count += 1
         total += len(d)
         prev, prev_data = im, data
 
-    print """ };"""
-    print "#define FRAMES_BYTES", total
-    print "#define FRAMES_W", WANT_WIDTH
-    print "#define FRAMES_H", WANT_HEIGHT
-    print "#define FRAMES_BS", BS
-    print "#define FRAMES_BW", BW
-    print "#define FRAMES_BL", BL
-    print "#define FRAMES_JUMP", JUMP
-    print "#endif"
+    print(""" };""")
+    print("#define FRAMES_BYTES {}".format(total))
+    print("#define FRAMES_W {}".format(WANT_WIDTH))
+    print("#define FRAMES_H {}".format(WANT_HEIGHT))
+    print("#define FRAMES_BS {}".format(BS))
+    print("#define FRAMES_BW {}".format(BW))
+    print("#define FRAMES_BL {}".format(BL))
+    print("#define FRAMES_JUMP {}".format(JUMP))
+    print("#endif")
 
 #process(40, 6523)
-process(40, 2200)
+process(FIRST_FRAME, LAST_FRAME)
 #process(475, 482)
-
-'''
-prev = get_frame(1)
-im = get_frame(1182)
-#im.show()
-b, c = tween(prev, im)
-#print b, c
-d = encode(b, c)
-'''
